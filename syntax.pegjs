@@ -1,17 +1,6 @@
 {
 	const morphism = options.morphism
-	function aggerateRules(rules, curpath, rule){
-		var assignments = [];
-		for(let t of rule.terms){
-			if(t.terms){
-				aggerateRules(rules, curpath.concat(rule.path), t)
-			} else {
-				assignments.push(t)
-			}
-		}
-		rules.push(new Rule(rule.path, morphism.join(assignments)))
-		return rules;
-	}
+
 	function convertCodePoint(str, line, col) {
 		var num = parseInt("0x" + str);
 
@@ -25,20 +14,6 @@
 			genError("Invalid Unicode escape code: " + str, line, col);
 		} else {
 			return fromCodePoint(num);
-		}
-	}
-	function pathCommute(selector, morph, j0, jm){
-		return function(lens){
-			if(!lens.tags || !lens.tags.path) return;
-			const path = lens.tags.path;
-			for(let j = j0(path); j < jm(path); j++){
-				if(selector(path[j])){
-					lens.tags.path = path.slice(j);
-					const r = morph(lens);
-					lens.tags.path = path;
-					return r;
-				}
-			}
 		}
 	}
 	function fromCodePoint() {
@@ -69,6 +44,13 @@
 			}
 		}
 		return result;
+	}
+	function commute(selector, morph){
+		return function(store){
+			if(selector.match(store.coget())){
+				store.cofocus(selector.cofocus).ap(morph)
+			}
+		}
 	}
 }
 
@@ -109,29 +91,21 @@ quoted_key
 	/ node:single_quoted_single_line_string { return node }
 
 selected
-	= '&' S* selector:selector S+ morph:morph { return pathCommute(selector, morph, p => 0, p => p.length) }
-	/ '>' S* selector:selector S+ morph:morph { return pathCommute(selector, morph, p => 1, p => 1) }
-	/ selector:selector S+ morph:morph { return pathCommute(selector, morph, p => 1, p => p.length) }
-singleSelector
-	= '.' key:key { return p => p.has(key) }
+	= selector:selector S* morph:morph { return commute({match : selector.match, cofocus: lens => lens}, morph) }
+	/ selector:selector S* '>' S* morph:morph { return commute(selector, morph) }
 selector
-	= ss:singleSelector+ { 
-		return function(p){
-			for(let s of ss) if(!s(p)) return false;
-			return true;
-		}
-	}
+	= '.' key:key { return { match : cot => cot && cot[key], cofocus : lens => lens.focus(key) } }
 
 // composite
 array_sep
 	= S / NL / comment
 array
 	= '[' array_sep* morphs:seqPart* array_sep* ']' { 
-		return l => l.cover([]).ap(morphism.join(morphs.map((m, j) => l => m(l.focus(j))))) 
+		return l => l.pad([]).ap(morphism.join(morphs.map((m, j) => s => m(s.focus(l => l.focus(j)))))) 
 	}
 
 object
-	= '{' array_sep* morphs:seqPart* array_sep* '}' { return l => l.cover({}).ap(morphism.join(morphs)) }
+	= '{' array_sep* morphs:seqPart* array_sep* '}' { return l => l.pad({}).ap(morphism.join(morphs)) }
 
 sequence
 	= '(' array_sep* morphs:seqPart* array_sep* ')' { return morphism.join(morphs) }

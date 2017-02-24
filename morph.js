@@ -43,7 +43,7 @@ class Store {
 	focus(vLens) { return new Store(this.target, vLens(this.lens), this.cotarget, this.colens) }
 	cofocus(vLens) { return new Store(this.target, this.lens, this.cotarget, vLens(this.colens)) }
 	fresh() {
-		return new Store({}, new IdentityLens, this.cotarget, this.colens).focus('<>')
+		return new Store({}, new IdentityLens, this.cotarget, this.colens).focus(l => l.focus('<>'))
 	}
 	ap(m) { m(this); return this; }
 	get() { return this.lens.get(this.target) }

@@ -80,6 +80,7 @@ const opmap = {
 	':': id,
 	'<-': id,
 	':=': fresh,
+	'++=': biop((x, y) => x.concat(y)),
 	'+=': biop((x, y) => x + y),
 	'-=': biop((x, y) => x - y),
 	'*=': biop((x, y) => x * y),

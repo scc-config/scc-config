@@ -166,7 +166,7 @@ boolean
 
 
 // lexicals
-ASSIGN_OPERATOR  = '=' / '<-' / ':=' / ':' / '+=' / '-=' / '*=' / '/=' / '%='
+ASSIGN_OPERATOR  = '=' / '<-' / ':=' / ':' / '++=' / '+=' / '-=' / '*=' / '/=' / '%='
 comment          = '#' (!(NL / EOF) .)*
 S                = [ \t]
 NL               = "\n" / "\r" "\n"

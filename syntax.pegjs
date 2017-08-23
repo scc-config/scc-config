@@ -90,11 +90,12 @@ quoted_key
 	= node:double_quoted_single_line_string { return node }
 	/ node:single_quoted_single_line_string { return node }
 
+// selecting
 selected
-	= selector:selector S* morph:morph { return commute({match : selector.match, cofocus: lens => lens}, morph) }
+	= selector:selector S* (':' S*)? morph:morph { return commute({match : selector.match, cofocus: lens => lens}, morph) }
 	/ selector:selector S* '>' S* morph:morph { return commute(selector, morph) }
 selector
-	= '.' key:key { return { match : cot => cot && cot[key], cofocus : lens => lens.focus(key) } }
+	= 'if' S+ key:key { return { match : cot => cot && cot[key], cofocus : lens => lens.focus(key) } }
 
 // composite
 array_sep

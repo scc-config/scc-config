@@ -23,8 +23,8 @@ database : {
 servers : {
   alpha : { ip : "10.0.0.1"; dc : "eqdc10" }
   beta  : { ip : "10.0.0.1"; dc : "eqdc10" }
-  .enable-alpha ( alpha.enabled = true )
-  .enable-beta  ( beta.enabled  = true )
+  if enable-alpha ( alpha.enabled = true )
+  if enable-beta  ( beta.enabled  = true )
 }
 ```
 

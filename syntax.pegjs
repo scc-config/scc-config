@@ -155,11 +155,15 @@ float_text
 	/ '-'  digits:(DIGITS '.' DIGITS)     { return '-' + digits.join('') }
 
 integer
-	= text:integer_text                   { return parseInt(text, 10) }
+	= "0" ("x"/"X") text:hex_text         { return parseInt(text, 16) }
+	/ text:integer_text                   { return parseInt(text, 10) }
 
 integer_text
 	= '+'? digits:DIGIT+ !'.'             { return digits.join('') }
 	/ '-'  digits:DIGIT+ !'.'             { return '-' + digits.join('') }
+
+hex_text
+	= digits:HEX+                         { return digits.join('') }
 
 boolean
 	= 'true'                              { return true }

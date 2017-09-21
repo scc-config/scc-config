@@ -75,18 +75,30 @@ class Store {
 		return this;
 	}
 }
+Store.fresh = function() {
+	return new Store({}, new IdentityLens(), this.cotarget, this.colens).focus(l => l.focus("<>"));
+};
 
 // morphs
 function put(x) {
 	return s => s.put(x);
 }
 function focus(k, m) {
-	return s => m(s.focus(l => l.focus(k)));
+	if (typeof k === "string") return s => m(s.focus(l => l.focus(k)));
+	else
+		return s => {
+			const key = k.call(s, s);
+			return m(s.focus(l => l.focus(key)));
+		};
 }
 function deepFocus(ks, m) {
 	if (!ks.length) return m;
 	if (ks.length === 1) return focus(ks[0], m);
-	return s => s.focus(l => l.focus(ks[0])).pad({}).ap(deepFocus(ks.slice(1), m));
+	return s =>
+		s
+			.focus(l => l.focus(ks[0]))
+			.pad({})
+			.ap(deepFocus(ks.slice(1), m));
 }
 function join(morphs) {
 	return function(store) {
@@ -95,11 +107,25 @@ function join(morphs) {
 }
 function fresh(morph) {
 	return function(store) {
-		store.put(store.fresh().ap(morph).get());
+		store.put(
+			store
+				.fresh()
+				.ap(morph)
+				.get()
+		);
 	};
 }
 function biop(b) {
-	return morph => store => store.put(b(store.get(), store.fresh().ap(morph).get()));
+	return morph => store =>
+		store.put(
+			b(
+				store.get(),
+				store
+					.fresh()
+					.ap(morph)
+					.get()
+			)
+		);
 }
 const id = m => m;
 const opmap = {

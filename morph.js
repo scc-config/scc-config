@@ -48,9 +48,7 @@ class Store {
 		return new Store(this.target, this.lens, this.cotarget, vLens(this.colens));
 	}
 	fresh() {
-		return new Store({}, new IdentityLens(), this.cotarget, this.colens).focus(l =>
-			l.focus("<>")
-		);
+		return new Store({}, new KeyLens("<>"), this.cotarget, this.colens);
 	}
 	ap(m) {
 		m(this);
@@ -76,7 +74,7 @@ class Store {
 	}
 }
 Store.fresh = function() {
-	return new Store({}, new IdentityLens(), this.cotarget, this.colens).focus(l => l.focus("<>"));
+	return new Store({}, new KeyLens("<>"), this.cotarget, this.colens);
 };
 
 // morphs
@@ -94,11 +92,22 @@ function focus(k, m) {
 function deepFocus(ks, m) {
 	if (!ks.length) return m;
 	if (ks.length === 1) return focus(ks[0], m);
-	return s =>
-		s
-			.focus(l => l.focus(ks[0]))
-			.pad({})
-			.ap(deepFocus(ks.slice(1), m));
+	const head = ks[0];
+	if (typeof head === "string") {
+		return s =>
+			s
+				.focus(l => l.focus(head))
+				.pad({})
+				.ap(deepFocus(ks.slice(1), m));
+	} else {
+		return s => {
+			const key = head.call(s, s);
+			return s
+				.focus(l => l.focus(key))
+				.pad({})
+				.ap(deepFocus(ks.slice(1), m));
+		};
+	}
 }
 function join(morphs) {
 	return function(store) {
@@ -141,6 +150,47 @@ const opmap = {
 	"%=": biop((x, y) => x % y)
 };
 
+const pbinop = f => (a, b) => store =>
+	store.put(
+		f(
+			store
+				.fresh()
+				.ap(a)
+				.get(),
+			store
+				.fresh()
+				.ap(b)
+				.get()
+		)
+	);
+const puniop = f => a => store =>
+	store.put(
+		f(
+			store
+				.fresh()
+				.ap(a)
+				.get()
+		)
+	);
+const popmap = {
+	"==": pbinop((a, b) => a === b),
+	"=/=": pbinop((a, b) => a !== b),
+	"<": pbinop((a, b) => a < b),
+	">": pbinop((a, b) => a > b),
+	"<=": pbinop((a, b) => a <= b),
+	">=": pbinop((a, b) => a >= b),
+	"<<@": pbinop((a, b) => b.indexOf(a) >= 0),
+	"/\\": pbinop((a, b) => a && b),
+	"\\/": pbinop((a, b) => a || b),
+	"+": pbinop((a, b) => a + b),
+	"-": pbinop((a, b) => a - b),
+	"*": pbinop((a, b) => a * b),
+	"/": pbinop((a, b) => a / b),
+	"<>": pbinop((a, b) => a[b]),
+	"uni!": puniop(a => !a),
+	"uni-": puniop(a => -a)
+};
+
 module.exports = {
 	Lens: Lens,
 	Store: Store,
@@ -150,5 +200,6 @@ module.exports = {
 	deepFocus: deepFocus,
 	join: join,
 	fresh: fresh,
-	opmap: opmap
+	opmap: opmap,
+	popmap: popmap
 };

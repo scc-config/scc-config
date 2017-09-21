@@ -1,18 +1,21 @@
-const parse = require('./syntax').parse;
-const morph = require('./morph');
+const parse = require("./syntax").parse;
+const morph = require("./morph");
 const Store = morph.Store;
 
 class SCC {
 	constructor(text) {
-		this.morphism = parse(text, {
-			morphism: morph
-		})
+		try {
+			this.morphism = parse(text, {
+				morphism: morph
+			});
+		} catch (e) {
+			console.log(e);
+			throw e;
+		}
 	}
 	select(selector) {
-		let store = new Store(
-			{}, new morph.IdentityLens,
-			selector, new morph.IdentityLens)
-		return store.ap(this.morphism).get()
+		let store = new Store({}, new morph.IdentityLens(), selector, new morph.IdentityLens());
+		return store.ap(this.morphism).get();
 	}
 }
 

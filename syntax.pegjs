@@ -47,25 +47,28 @@
 	}
 	function commute(selector, morph){
 		return function(store){
-			if(selector.match(store.coget())){
+			if(selector.match(store.coget(), store)){
 				store.cofocus(selector.cofocus).ap(morph)
 			}
 		}
 	}
 	function enumerated(enumerator, morph){
 		return function(store){
-			const {key, range, cofocus0, cofocus} = enumerator;
+			const {key, range, cofocus} = enumerator;
+			const cot = store.coget();
+			const recov = cot[key]
 			for(let k of range) {
-				store.cofocus(cofocus0).coput(k);
-				store.cofocus(cofocus).ap(morph)
+				cot[key] = k;
+				store.cofocus(cofocus).ap(morph);
 			}
+			cot[key] = recov;
 		}
 	}
-	function reflectMorph(k){
+	function reflectMorph(m){
 		return store => {
 			const cot = store.coget();
 			if(!cot) return void 0;
-			else return store.put(cot[k]);
+			else return store.put(cot[store.fresh().ap(m).get()]);
 		}
 	}
 }
@@ -74,17 +77,58 @@
 start = array_sep* morphs:seqPart* array_sep* { return morphism.join(morphs) }
 
 // morphs
+expr = bool
 morph
+	= focused / selected / bool
+bool
+	= head:comp rears:bool_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
+	}
+bool_rear = S+ op:BOOL_OPERATOR S+ item:comp { return {item, op} }
+
+comp
+	= head:comp_head rear:plus {
+		return morphism.popmap[head.op](head.item, rear)
+	}
+	/ plus
+comp_head = item:plus S+ op:COMP_OPERATOR S+ { return {item, op} }
+
+plus
+	= head:mult rears:plus_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
+	}
+plus_rear = S+ op:PLUS_OPERATOR S+ item:mult { return {item, op} }
+
+mult
+	= head:part rears:mult_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
+	}
+mult_rear = S+ op:MULT_OPERATOR S+ item:part { return {item, op} }
+
+part
+	= head:prime rears:part_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
+	}
+part_rear = S+ op:PART_OPERATOR S+ item:prime { return {item, op} }
+
+prime
 	= it:string  { return morphism.put(it) }
 	/ it:float   { return morphism.put(it) }
 	/ it:integer { return morphism.put(it) }
 	/ it:boolean { return morphism.put(it) }
-	/ selected
-	/ focused
+	/ it:reflect { return reflectMorph(it) }
+	/ negation
 	/ array
 	/ object
 	/ sequence
-	/ it:reflect { return reflectMorph(it) }
 
 // focusing
 focus_path
@@ -109,7 +153,13 @@ quoted_key
 	/ node:single_quoted_single_line_string { return node }
 
 // reflection
-reflect = "$" it:key { return it }
+reflect
+	= "$" it:key { return morphism.put(it) }
+	/ "$" it:prime { return it }
+// negation
+negation
+	= NOT_OPERATOR it:prime { return popmap['uni!'](it) }
+	/ NEGATE_OPERATOR it:prime { return popmap['uni-'](it) }
 
 // selecting
 selected
@@ -118,20 +168,22 @@ selected
 	/ "for" enumerator:enumerator S* (':' S*)? morph:morph {
 		return enumerated(Object.assign(enumerator, {cofocus:lens => lens}), morph)
 	}
+	/ "for" enumerator:enumerator S* '>' S* morph:morph {
+		return enumerated(Object.assign(enumerator), morph)
+	}
 selector
-	= S* "(" S* key:key S* "=" S* m:morph S* ")" {
+	= S* "(" S* m:expr S* ")" {
 		return {
-			match: cot => cot && cot[key] && cot[key] === morphism.Store.fresh().ap(m).get(),
+			match: (cot, s)=> s.fresh().ap(m).get(),
 			cofocus: lens => lens.focus(key)
 		}
 	}
 	/ S+ key:key { return { match : cot => cot && cot[key], cofocus : lens => lens.focus(key) } }
 enumerator
-	= S* "(" S* key:key S* ":" S* m:morph S* ")" {
+	= S* "(" S* key:key S* ":" S* m:expr S* ")" {
 		return {
 			key: key,
 			range: morphism.Store.fresh().ap(m).get(),
-			cofocus0: lens => lens.focus(key),
 			cofocus: lens => lens.focus(key)
 		}
 	}
@@ -211,6 +263,13 @@ boolean
 
 // lexicals
 ASSIGN_OPERATOR  = '=' / '<-' / ':=' / ':' / '++=' / '+=' / '-=' / '*=' / '/=' / '%='
+BOOL_OPERATOR    = '/\\' / '\\/'
+COMP_OPERATOR    = '==' / '<<@' / '<' / '>' / '<=' / '>=' / '=/='
+PLUS_OPERATOR    = '+' / '-'
+MULT_OPERATOR    = '*' / '/'
+PART_OPERATOR    = '<>'
+NOT_OPERATOR     = '!'
+NEGATE_OPERATOR  = '-'
 comment          = '#' (!(NL / EOF) .)*
 S                = [ \t]
 NL               = "\n" / "\r" "\n"

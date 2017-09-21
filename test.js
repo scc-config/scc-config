@@ -27,7 +27,7 @@ servers = {
   if enable-alpha if enable-beta ( both = true )
 }
 
-if family > {
+if family :> {
   if a familyval = 1
   if b familyval = 2
   if($a == 1) yes = 1
@@ -44,12 +44,16 @@ obj = {
 }
 
 doubleDollar = 0
-for(segment : ["a"; "b"; "c"; "d"]) {
+let $ABCD = ['a'; 'b'; 'c'; 'd']
+for(segment : $ABCD) {
 	if($$segment) doubleDollar = 1 + 2 * 3 - 6
 }
 
 bothPQ = 0
 if($p /\\ ($q == 1) /\\ true) bothPQ = 1
+
+let $Q = 1
+dollarQ = $Q
 `);
 
 	it("should be able to parse", () => assert.equal(config.select({}).title, "SCC Example"));
@@ -83,6 +87,7 @@ if($p /\\ ($q == 1) /\\ true) bothPQ = 1
 		assert.deepEqual(config.select({ d: 1 }).doubleDollar, 1));
 	it("should be able to handle double dollars", () =>
 		assert.deepEqual(config.select({ e: 1 }).doubleDollar, 0));
+	it("should be able to handle assigns", () => assert.deepEqual(config.select({}).dollarQ, 1));
 	it("should be able to handle bool operators", () => {
 		assert.deepEqual(config.select({ p: 1, q: 1 }).bothPQ, 1);
 		assert.deepEqual(config.select({ p: 1, q: 0 }).bothPQ, 0);

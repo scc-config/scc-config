@@ -73,9 +73,6 @@ class Store {
 		return this;
 	}
 }
-Store.fresh = function() {
-	return new Store({}, new KeyLens("<>"), this.cotarget, this.colens);
-};
 
 // morphs
 function put(x) {

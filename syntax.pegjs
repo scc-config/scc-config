@@ -54,8 +54,9 @@
 	}
 	function enumerated(enumerator, morph){
 		return function(store){
-			const {key, range, cofocus} = enumerator;
+			const {key, range:Range, cofocus} = enumerator;
 			const cot = store.coget();
+			const range = Range(store);
 			const recov = cot[key]
 			for(let k of range) {
 				cot[key] = k;
@@ -71,6 +72,13 @@
 			else return store.put(cot[store.fresh().ap(m).get()]);
 		}
 	}
+	function LetMorph(key, m){
+		return store => {
+			const v = store.fresh().ap(m).get();
+			store.cofocus(lens => lens.focus(key)).coput(v);
+			return store
+		}
+	}
 }
 
 
@@ -79,7 +87,7 @@ start = array_sep* morphs:seqPart* array_sep* { return morphism.join(morphs) }
 // morphs
 expr = bool
 morph
-	= focused / selected / bool
+	= focused / directive / bool
 bool
 	= head:comp rears:bool_rear* {
 		return rears.reduce(function(sofar,newitem){
@@ -161,16 +169,20 @@ negation
 	= NOT_OPERATOR it:prime { return popmap['uni!'](it) }
 	/ NEGATE_OPERATOR it:prime { return popmap['uni-'](it) }
 
-// selecting
-selected
+// directives
+directive
 	= "if" selector:selector S* (':' S*)? morph:morph { return commute({match : selector.match, cofocus: lens => lens}, morph) }
-	/ "if" selector:selector S* '>' S* morph:morph { return commute(selector, morph) }
+	/ "if" selector:selector S* ':>' S* morph:morph { return commute(selector, morph) }
 	/ "for" enumerator:enumerator S* (':' S*)? morph:morph {
 		return enumerated(Object.assign(enumerator, {cofocus:lens => lens}), morph)
 	}
-	/ "for" enumerator:enumerator S* '>' S* morph:morph {
-		return enumerated(Object.assign(enumerator), morph)
+	// / "for" enumerator:enumerator S* '>' S* morph:morph {
+	// 	return enumerated(Object.assign(enumerator), morph)
+	// }
+	/ "let" S* "$" key:key S* "=" S* m:expr {
+		return LetMorph(key, m)
 	}
+	/ "section" S+ key:key S* m:morph { return m }
 selector
 	= S* "(" S* m:expr S* ")" {
 		return {
@@ -183,7 +195,7 @@ enumerator
 	= S* "(" S* key:key S* ":" S* m:expr S* ")" {
 		return {
 			key: key,
-			range: morphism.Store.fresh().ap(m).get(),
+			range: store => store.fresh().ap(m).get(),
 			cofocus: lens => lens.focus(key)
 		}
 	}

@@ -43,6 +43,7 @@ A hash symbol marks the rest of the line as a comment.
 # This is a full-line comment
 key : "value" # This is a comment at the end of a line
 ```
+
 ### Assignments
 
 SCC uses assignments to build the document. An assignment is a **key** corresponded with a **value** (or a *Morph*, more precisely). Assignments look like this:
@@ -59,11 +60,58 @@ servers.alpha.enabled : true
 
 ### Values
 
+#### Strings
+
+#### Numbers
+
+#### Boolean Values
+
+#### Objects
+
+Assignment `key = {...}` sets *key* into an object. You can set its properties by either assigning inside the `{}` like:
+
+```
+key = {
+  a = 1
+  b = 2
+}
+```
+
+or
+
+```
+key = {}
+key.a = 1
+key.b = 2
+```
+
+#### Arrays
+
+`[item; item; item]`
+
+#### Variable quotation
+
+`$<varname>`
+
+### Expressions
+
 ### Selectors
 
-You can prefix any assignment with a **selector**.
+You can prefix any assignment with a **selector** like:
 
-##Advanced
+```scc
+if enable-alpha servers.alpha.enabled : true
+if ($enable-item == "beta") servers.beta.enabled : true
+```
+
+A selector can be in two forms:
+
+- `if <name>` : Whether variable *name* is true;
+- `if (<expression>)` : Whether expression is true.
+
+For expressions, you can quote variable names with `$`.
+
+## Advanced
 
 ### Morphs
 

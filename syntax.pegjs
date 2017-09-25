@@ -85,9 +85,79 @@
 start = array_sep* morphs:seqPart* array_sep* { return morphism.join(morphs) }
 
 // morphs
+morph = focused / directive / bool
+
+// focusing
+focus_path
+	= parts:dot_ended_foci_part+ name:foci_part    { return parts.concat(name) }
+	/ name:foci_part                               { return [name] }
+
+foci_part
+	= key
+	/ quoted_key
+	/ ".(" S* m:expr S* ')' { return s => s.fresh().ap(m).get() }
+
+dot_ended_foci_part = name:foci_part S* '.' S*     { return name }
+
+focused
+	= focus_path:focus_path S* op:ASSIGN_OPERATOR S* m:morph {
+		return morphism.deepFocus(focus_path, morphism.opmap[op](m))
+	}
+key
+	= chars:ASCII_BASIC+ { return chars.join('') }
+quoted_key
+	= node:double_quoted_single_line_string { return node }
+	/ node:single_quoted_single_line_string { return node }
+
+// directives
+directive
+	// Common selector directive
+	= "if" selector:selector S* (':' S*)? morph:morph {
+		return commute({match : selector.match, cofocus: lens => lens}, morph)
+	}
+	// Focusing selector directive
+	/ "if" selector:selector S* ':>' S* morph:morph {
+		return commute(selector, morph)
+	}
+	// Common loop directive
+	/ "for" enumerator:enumerator S* (':' S*)? morph:morph {
+		return enumerated(Object.assign(enumerator, {cofocus:lens => lens}), morph)
+	}
+	// Focusing loop directive
+	/ "for" enumerator:enumerator S* ':>' S* morph:morph {
+		return enumerated(Object.assign(enumerator), morph)
+	}
+	// Let directive
+	/ "let" S* "$" key:key S* "=" S* m:expr {
+		return LetMorph(key, m)
+	}
+	// Section directive
+	/ "section" S+ key:key S* (':' S*)? m:morph { return m }
+
+selector
+	= S* "(" S* m:expr S* ")" {
+		return {
+			match: (cot, s)=> s.fresh().ap(m).get(),
+			cofocus: lens => lens.focus(key)
+		}
+	}
+	/ S+ key:key {
+		return {
+			match : cot => cot && cot[key],
+			cofocus : lens => lens.focus(key)
+		}
+	}
+
+enumerator
+	= S* "(" S* key:key S* ":" S* m:expr S* ")" {
+		return {
+			key: key,
+			range: store => store.fresh().ap(m).get(),
+			cofocus: lens => lens.focus(key)
+		}
+	}
+
 expr = bool
-morph
-	= focused / directive / bool
 bool
 	= head:comp rears:bool_rear* {
 		return rears.reduce(function(sofar,newitem){
@@ -138,28 +208,6 @@ prime
 	/ object
 	/ sequence
 
-// focusing
-focus_path
-	= parts:dot_ended_foci_part+ name:foci_part    { return parts.concat(name) }
-	/ name:foci_part                               { return [name] }
-
-foci_part
-	= key
-	/ quoted_key
-	/ ".(" S* m:morph S* ')' { return s => s.fresh().ap(m).get() }
-
-dot_ended_foci_part = name:foci_part S* '.' S*     { return name }
-
-focused
-	= focus_path:focus_path S* op:ASSIGN_OPERATOR S* m:morph {
-		return morphism.deepFocus(focus_path, morphism.opmap[op](m))
-	}
-key
-	= chars:ASCII_BASIC+ { return chars.join('') }
-quoted_key
-	= node:double_quoted_single_line_string { return node }
-	/ node:single_quoted_single_line_string { return node }
-
 // reflection
 reflect
 	= "$" it:key { return morphism.put(it) }
@@ -168,37 +216,6 @@ reflect
 negation
 	= NOT_OPERATOR it:prime { return popmap['uni!'](it) }
 	/ NEGATE_OPERATOR it:prime { return popmap['uni-'](it) }
-
-// directives
-directive
-	= "if" selector:selector S* (':' S*)? morph:morph { return commute({match : selector.match, cofocus: lens => lens}, morph) }
-	/ "if" selector:selector S* ':>' S* morph:morph { return commute(selector, morph) }
-	/ "for" enumerator:enumerator S* (':' S*)? morph:morph {
-		return enumerated(Object.assign(enumerator, {cofocus:lens => lens}), morph)
-	}
-	// / "for" enumerator:enumerator S* '>' S* morph:morph {
-	// 	return enumerated(Object.assign(enumerator), morph)
-	// }
-	/ "let" S* "$" key:key S* "=" S* m:expr {
-		return LetMorph(key, m)
-	}
-	/ "section" S+ key:key S* m:morph { return m }
-selector
-	= S* "(" S* m:expr S* ")" {
-		return {
-			match: (cot, s)=> s.fresh().ap(m).get(),
-			cofocus: lens => lens.focus(key)
-		}
-	}
-	/ S+ key:key { return { match : cot => cot && cot[key], cofocus : lens => lens.focus(key) } }
-enumerator
-	= S* "(" S* key:key S* ":" S* m:expr S* ")" {
-		return {
-			key: key,
-			range: store => store.fresh().ap(m).get(),
-			cofocus: lens => lens.focus(key)
-		}
-	}
 
 // composite
 array_sep

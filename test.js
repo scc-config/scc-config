@@ -54,6 +54,8 @@ if($p /\\ ($q == 1) /\\ true) bothPQ = 1
 
 let $Q = 1
 dollarQ = $Q
+
+combined = {a = 1} :+: {b = 2}
 `);
 
 	it("should be able to parse", () => assert.equal(config.select({}).title, "SCC Example"));
@@ -88,6 +90,8 @@ dollarQ = $Q
 	it("should be able to handle double dollars", () =>
 		assert.deepEqual(config.select({ e: 1 }).doubleDollar, 0));
 	it("should be able to handle assigns", () => assert.deepEqual(config.select({}).dollarQ, 1));
+	it("should be able to handle combine operator", () =>
+		assert.deepEqual(config.select({}).combined, { a: 1, b: 2 }));
 	it("should be able to handle bool operators", () => {
 		assert.deepEqual(config.select({ p: 1, q: 1 }).bothPQ, 1);
 		assert.deepEqual(config.select({ p: 1, q: 0 }).bothPQ, 0);

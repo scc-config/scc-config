@@ -167,11 +167,20 @@ bool
 bool_rear = S+ op:BOOL_OPERATOR S+ item:comp { return {item, op} }
 
 comp
-	= head:comp_head rear:plus {
-		return morphism.popmap[head.op](head.item, rear)
+	= head:struct rears:comp_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
 	}
-	/ plus
-comp_head = item:plus S+ op:COMP_OPERATOR S+ { return {item, op} }
+comp_rear = S+ op:COMP_OPERATOR S+ item:struct { return {item, op} }
+
+struct
+	= head:plus rears:struct_rear* {
+		return rears.reduce(function(sofar,newitem){
+			return morphism.popmap[newitem.op](sofar, newitem.item)
+		}, head)
+	}
+struct_rear = S+ op:STRUCT_OPERATOR S+ item:plus { return {item, op} }
 
 plus
 	= head:mult rears:plus_rear* {
@@ -294,6 +303,7 @@ boolean
 ASSIGN_OPERATOR  = '=' / '<-' / ':=' / ':' / '++=' / '+=' / '-=' / '*=' / '/=' / '%='
 BOOL_OPERATOR    = '/\\' / '\\/'
 COMP_OPERATOR    = '==' / '<<@' / '<' / '>' / '<=' / '>=' / '=/='
+STRUCT_OPERATOR  = '++' / ':+:'
 PLUS_OPERATOR    = '+' / '-'
 MULT_OPERATOR    = '*' / '/'
 PART_OPERATOR    = '<>'

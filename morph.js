@@ -169,6 +169,7 @@ const puniop = f => a => store =>
 				.get()
 		)
 	);
+const combineMorph = (a, b) => store => store.ap(a).ap(b);
 const popmap = {
 	"==": pbinop((a, b) => a === b),
 	"=/=": pbinop((a, b) => a !== b),
@@ -184,8 +185,12 @@ const popmap = {
 	"*": pbinop((a, b) => a * b),
 	"/": pbinop((a, b) => a / b),
 	"<>": pbinop((a, b) => a[b]),
+	"++": pbinop((a, b) => [...a, ...b]),
 	"uni!": puniop(a => !a),
-	"uni-": puniop(a => -a)
+	"uni-": puniop(a => -a),
+
+	// Special
+	":+:": combineMorph
 };
 
 module.exports = {

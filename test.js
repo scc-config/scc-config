@@ -37,7 +37,7 @@ if family :> {
 .($reflectSet) = 'reflect set'
 
 obj = {
-  for(segment : ["a"; "b"; "c"; "d"]) {
+  for($segment : ["a"; "b"; "c"; "d"]) {
 		.($segment) = $segment
 		.($segment + '0') = $segment + '0'
 	}
@@ -45,7 +45,7 @@ obj = {
 
 doubleDollar = 0
 let $ABCD = ['a'; 'b'; 'c'; 'd']
-for(segment : $ABCD) {
+for($segment : $ABCD) {
 	if($$segment) doubleDollar = 1 + 2 * 3 - 6
 }
 

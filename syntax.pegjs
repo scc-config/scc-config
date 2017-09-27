@@ -149,7 +149,7 @@ selector
 	}
 
 enumerator
-	= S* "(" S* key:key S* ":" S* m:expr S* ")" {
+	= S* "(" S* "$" key:key S* ":" S* m:expr S* ")" {
 		return {
 			key: key,
 			range: store => store.fresh().ap(m).get(),

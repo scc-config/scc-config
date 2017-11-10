@@ -223,8 +223,8 @@ reflect
 	/ "$" it:prime { return it }
 // negation
 negation
-	= NOT_OPERATOR it:prime { return popmap['uni!'](it) }
-	/ NEGATE_OPERATOR it:prime { return popmap['uni-'](it) }
+	= NOT_OPERATOR it:prime { return morphism.popmap['uni!'](it) }
+	/ NEGATE_OPERATOR it:prime { return morphism.popmap['uni-'](it) }
 
 // composite
 array_sep

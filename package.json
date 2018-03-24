@@ -1,6 +1,6 @@
 {
   "name": "scc-config",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "description": "Simply cascade configuration file",
   "main": "./main.js",
   "author": {

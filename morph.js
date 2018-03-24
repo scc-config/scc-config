@@ -1,3 +1,9 @@
+"use strict";
+
+const parse = require("./syntax").parse;
+const fs = require("fs");
+const path = require("path");
+
 // lenses
 class Lens {
 	constructor(getter, setter) {
@@ -193,6 +199,22 @@ const popmap = {
 	":+:": combineMorph
 };
 
+const include = m => store => {
+	const refpath = store.coget().$PATH;
+	const newpath = path.resolve(
+		path.dirname(refpath),
+		store
+			.fresh()
+			.ap(m)
+			.get()
+	);
+	const mm = parse(fs.readFileSync(newpath, "utf-8"), { morphism: module.exports });
+
+	store.coget().$PATH = newpath;
+	store.ap(mm);
+	store.coget().$PATH = refpath;
+};
+
 module.exports = {
 	Lens: Lens,
 	Store: Store,
@@ -203,5 +225,6 @@ module.exports = {
 	join: join,
 	fresh: fresh,
 	opmap: opmap,
-	popmap: popmap
+	popmap: popmap,
+	include
 };

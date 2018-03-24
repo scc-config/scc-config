@@ -133,6 +133,8 @@ directive
 	}
 	// Section directive
 	/ "section" S+ key:key S* (':' S*)? m:morph { return m }
+	// Include directgive
+	/ "include" S+ path:prime { return morphism.include(path) }
 
 selector
 	= S* "(" S* m:expr S* ")" {

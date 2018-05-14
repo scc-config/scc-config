@@ -199,6 +199,8 @@ const popmap = {
 	":+:": combineMorph
 };
 
+const includeCache = new Map();
+
 const include = m => store => {
 	const refpath = store.coget().$PATH;
 	const newpath = path.resolve(
@@ -208,7 +210,14 @@ const include = m => store => {
 			.ap(m)
 			.get()
 	);
-	const mm = parse(fs.readFileSync(newpath, "utf-8"), { morphism: module.exports });
+	let content = "";
+	if (includeCache.has(newpath)) {
+		content = includeCache.get(newpath);
+	} else {
+		content = fs.readFileSync(newpath, "utf-8");
+		includeCache.set(newpath, content);
+	}
+	const mm = parse(content, { morphism: module.exports });
 
 	store.coget().$PATH = newpath;
 	store.ap(mm);
